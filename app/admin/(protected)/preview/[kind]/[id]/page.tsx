@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth';
 import { projectAssets } from '@/lib/data';
 import { isKind, type Category, type Skill, type Service, type Project } from '@/lib/types';
-import { Skills, ServiceCard } from '@/components/ui';
+import { Skills } from '@/components/ui';
+import { ServiceDetail } from '@/components/service';
 import { ProjectDetail } from '@/components/project';
 export default async function PreviewPage({ params }: { params: Promise<{ kind: string; id: string }> }) {
   const { kind, id } = await params;
@@ -15,7 +16,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ kind: 
   if (!entry) notFound();
   let content;
   if (kind === 'projects') content = <ProjectDetail project={entry as Project} assets={await projectAssets(id, db)} />;
-  else if (kind === 'services') content = <div className="container preview-section"><ServiceCard service={entry as Service} /></div>;
+  else if (kind === 'services') content = <ServiceDetail service={entry as Service} />;
   else {
     const categoryId = kind === 'categories' ? id : entry.category_id;
     const { data: category, error: categoryError } = await db.from('categories').select('*').eq('id', categoryId).single();

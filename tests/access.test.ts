@@ -85,3 +85,15 @@ describe('Ordre automatique des contenus', () => {
     expect(update.rows[0].sort_order).toBe(2);
   }));
 });
+
+describe('Publication des services', () => {
+  it('masque les brouillons et retire les services dépubliés aux visiteurs', async () => rollbackTest(async () => {
+    const created = await db.query<{id:string}>("insert into public.services(title,summary,description) values ('Test publication','Résumé','Description privée') returning id");
+    const id=created.rows[0].id;
+    await as('anon');expect((await db.query('select id from public.services where id=$1',[id])).rows).toHaveLength(0);
+    await as('authenticated',admin);await db.query('update public.services set published=true where id=$1',[id]);
+    await as('anon');expect((await db.query('select id from public.services where id=$1',[id])).rows).toHaveLength(1);
+    await as('authenticated',admin);await db.query('update public.services set published=false where id=$1',[id]);
+    await as('anon');expect((await db.query('select id from public.services where id=$1',[id])).rows).toHaveLength(0);
+  }));
+});
