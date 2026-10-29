@@ -1,7 +1,8 @@
 export const site = {
   name: 'Aris NK',
-  title: 'Aris NK — SaaS builder à Lubumbashi',
-  description: 'SaaS builder à Lubumbashi, en RDC. Je construis mes produits, explore des idées et partage mon parcours de développeur autodidacte.',
+  fullName: 'Aristote Nkomba',
+  title: 'Aristote Nkomba (Aris NK) — Développeur web & SaaS builder en RDC',
+  description: 'Aristote Nkomba, alias Aris NK, développeur web et SaaS builder à Lubumbashi, en RDC. Découvre mes produits, mes projets et mon parcours autodidacte.',
   email: 'mail.pro@arislabs.online',
   whatsapp: 'https://wa.me/243827296237',
   location: 'Lubumbashi, RDC',
