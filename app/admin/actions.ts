@@ -6,8 +6,10 @@ import { configured, sessionClient } from '@/lib/supabase/server';
 import { isKind, type Kind } from '@/lib/types';
 import { schemas, validateImage, imageSignature } from '@/lib/validation';
 import { z } from 'zod';
+import { categoryPath } from '@/lib/admin-navigation';
 export type FormState = { error?: string; success?: string };
 function dbError(code?: string) {
+  if (code === '22003') return 'La liste a atteint sa capacité. Réorganisez les positions avant un nouvel ajout.';
   if (code === '23505') return 'Cet identifiant existe déjà. Choisissez un autre slug.';
   if (code === '23503') return 'Cette catégorie contient encore des compétences. Déplacez-les ou supprimez-les avant de la supprimer.';
   return 'L’opération a échoué. Vérifiez les champs et réessayez.';
@@ -29,17 +31,21 @@ export async function logout() { if (configured()) { const db = await sessionCli
 export async function saveEntry(kind: Kind, _previous: FormState, form: FormData): Promise<FormState> {
   const db = await requireAdmin();
   if (!isKind(kind)) return { error: 'Type de contenu invalide.' };
+  const id = form.get('id');
+  if (id && !validId(id).success) return { error: 'Identifiant invalide.' };
   const values: Record<string, unknown> = Object.fromEntries(form.entries());
+  if (!id) values.sort_order = 0; // Validated placeholder; PostgreSQL assigns the actual order atomically.
   values.published = form.get('published') === 'on';
   if (kind === 'projects') values.technologies = [...new Set(String(form.get('technologies') || '').split(',').map(t => t.trim()).filter(Boolean))];
   const parsed = schemas[kind].safeParse(values);
   if (!parsed.success) return { error: parsed.error.issues.map(i => i.message).join(' ') };
-  const id = form.get('id');
-  if (id && !validId(id).success) return { error: 'Identifiant invalide.' };
   const payload: Record<string, unknown> = parsed.data;
+  if (!id) delete payload.sort_order;
   const result = id ? await db.from(kind).update(payload).eq('id', id).select('id').single() : await db.from(kind).insert(payload).select('id').single();
   if (result.error) return { error: dbError(result.error.code) };
   revalidatePath('/', 'layout');
+  if (kind === 'categories') redirect(`${categoryPath(result.data.id)}?saved=1`);
+  if (kind === 'skills') redirect(`${categoryPath(String(payload.category_id))}?saved=1`);
   redirect(`/admin/${kind}/${result.data.id}?saved=1`);
 }
 export async function deleteEntry(kind: Kind, _previous: FormState, form: FormData): Promise<FormState> {
@@ -56,9 +62,11 @@ export async function deleteEntry(kind: Kind, _previous: FormState, form: FormDa
       if (storageError) return { error: 'Impossible de supprimer les images. Réessayez avant de supprimer le projet.' };
     }
   }
-  const { error } = await db.from(kind).delete().eq('id', id.data).select('id').single();
+  const { data: deleted, error } = await db.from(kind).delete().eq('id', id.data).select('*').single();
   if (error) return { error: dbError(error.code) };
   revalidatePath('/', 'layout');
+  if (kind === 'categories') redirect('/admin/skills?deleted=1');
+  if (kind === 'skills') redirect(`${categoryPath(deleted.category_id)}?deleted=1`);
   redirect(`/admin/${kind}?deleted=1`);
 }
 export async function uploadAsset(_previous: FormState, form: FormData): Promise<FormState> {
@@ -66,8 +74,7 @@ export async function uploadAsset(_previous: FormState, form: FormData): Promise
   const project = validId(form.get('project_id'));
   const file = form.get('file');
   const alt = String(form.get('alt') || '').trim();
-  const sort = z.coerce.number().int().min(0).max(9999).safeParse(form.get('sort_order'));
-  if (!project.success || !(file instanceof File) || !sort.success || !alt || alt.length > 250) return { error: 'Choisissez une image, un ordre valide et un texte alternatif (250 caractères maximum).' };
+  if (!project.success || !(file instanceof File) || !alt || alt.length > 250) return { error: 'Choisissez une image et un texte alternatif (250 caractères maximum).' };
   const invalid = validateImage(file);
   if (invalid) return { error: invalid };
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -78,7 +85,7 @@ export async function uploadAsset(_previous: FormState, form: FormData): Promise
   const path = `${project.data}/${crypto.randomUUID()}.${extension}`;
   const { error } = await db.storage.from('project-media').upload(path, bytes, { contentType: file.type, upsert: false });
   if (error) return { error: 'Téléversement impossible. Vérifiez votre connexion puis réessayez.' };
-  const { error: insertError } = await db.from('project_assets').insert({ project_id: project.data, path, alt, sort_order: sort.data });
+  const { error: insertError } = await db.from('project_assets').insert({ project_id: project.data, path, alt });
   if (insertError) { await db.storage.from('project-media').remove([path]); return { error: 'L’image n’a pas pu être associée au projet.' }; }
   revalidatePath('/', 'layout');
   redirect(`/admin/projects/${project.data}?uploaded=1`);

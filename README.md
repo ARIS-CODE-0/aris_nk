@@ -16,7 +16,7 @@ Ouvrir http://localhost:3000. Sans configuration Supabase, le site présente les
 
 ## Connecter Supabase
 
-1. Créer un projet Supabase. Dans le SQL Editor, exécuter **une seule fois** `supabase/migrations/202610290001_portfolio.sql` sur un projet neuf. Le script crée les tables, les politiques RLS et le bucket **privé** `project-media`.
+1. Créer un projet Supabase. Dans le SQL Editor, exécuter les fichiers de `supabase/migrations` **une seule fois chacun, dans l’ordre de leur nom**, sur un projet neuf. Le script crée les tables, les politiques RLS et le bucket **privé** `project-media`.
 2. Dans Authentication → Providers → Email, désactiver les nouvelles inscriptions publiques (« Allow new users to sign up »). Garder la connexion par e-mail/mot de passe activée.
 3. Dans Authentication → Users → Add user, créer votre utilisateur administrateur avec e-mail, mot de passe robuste et confirmation de l’e-mail. Aucun mot de passe n’est dans le dépôt.
 4. Copier l’UUID du compte et l’inscrire via SQL Editor :
@@ -42,7 +42,8 @@ La clé publique moderne `sb_publishable_…` est attendue (la clé legacy `anon
 
 ## Gestion des contenus
 
-- Créer des catégories, puis leurs compétences. Réordonner avec le champ « Ordre » : le plus petit nombre est affiché en premier. À ordre égal, la création la plus ancienne passe d’abord.
+- Ouvrir **Compétences** : cette page liste les catégories et permet d’en ajouter. Ouvrir une catégorie pour consulter ses compétences et en ajouter ; la catégorie est déjà choisie. Les anciennes adresses `/admin/categories` redirigent vers ce parcours.
+- Chaque nouveau contenu (catégorie, compétence, service, projet, image) reçoit automatiquement la position suivante à l’enregistrement, sans champ à remplir. Les compétences sont ordonnées par catégorie et les images par projet. Les positions existantes sont conservées. Un changement de catégorie place la compétence à la fin du nouveau groupe. Réordonner ensuite avec le champ « Ordre » sur les formulaires de modification : le plus petit nombre est affiché en premier. À ordre égal, la création la plus ancienne passe d’abord.
 - Une catégorie en brouillon masque ses compétences. Les catégories sans compétence publiée sont masquées. Les accordéons publics sont fermés initialement ; ils peuvent être ouverts indépendamment et au clavier.
 - Les services comportent titre, résumé et description, sans tarif. Le bouton mène au contact.
 - Les projets comportent titre, slug, résumé, description, type, technologies libres et liens facultatifs. Enregistrer le projet avant d’ajouter des images. Modifier son slug change son adresse, sans redirection automatique.
