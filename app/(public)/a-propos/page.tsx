@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { Action, Eyebrow } from '@/components/ui';
+import { Action, Eyebrow, Skills } from '@/components/ui';
+import { publicContent } from '@/lib/data';
 import { site, siteUrl } from '@/lib/site';
 
 const title = 'Aristote Nkomba : développeur web & SaaS builder à Lubumbashi';
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
   openGraph: { title: `${title} — Aris NK`, description, url: '/a-propos', images: ['/opengraph-image'] },
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { categories, skills } = await publicContent();
   const personId = `${siteUrl}/#person`;
   const structuredData = {
     '@context': 'https://schema.org',
@@ -46,8 +48,8 @@ export default function AboutPage() {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }} />
     <section className="container page-content about-intro" aria-labelledby="about-title">
       <div>
-        <Eyebrow>ARISTOTE NKOMBA · ARIS NK</Eyebrow>
-        <h1 id="about-title">Aristote Nkomba<span className="text-blue">.</span><br />Alias Aris NK.</h1>
+        <Eyebrow>À PROPOS D’ARIS NK</Eyebrow>
+        <h1 id="about-title">Aris NK<span className="text-blue">.</span><br />Développeur web<br />& créateur de SaaS.</h1>
         <p className="page-lead">Je suis Aristote Nkomba, aussi connu sous le nom d’Aris NK, développeur web et SaaS builder à Lubumbashi, en République démocratique du Congo (RDC). J’apprends en construisant des produits web et je partage ce que je découvre en chemin.</p>
         <div className="hero-actions"><Action href="/projets">Explorer mes projets</Action><Action href="/contact" secondary>Faire connaissance</Action></div>
       </div>
@@ -74,8 +76,13 @@ export default function AboutPage() {
       </div>
     </section>
 
+    <section className="container section" aria-labelledby="about-skills-title">
+      <div className="section-heading"><div><Eyebrow index="03">MES COMPÉTENCES</Eyebrow><h2 id="about-skills-title">Ma boîte à outils<span className="text-blue">.</span></h2></div><p>Des compétences qui évoluent<br />avec les projets et les idées.</p></div>
+      <Skills categories={categories} skills={skills} />
+    </section>
+
     <section className="container about-closing" aria-labelledby="about-follow-title">
-      <Eyebrow index="03">CONSTRUIRE ET PARTAGER</Eyebrow>
+      <Eyebrow index="04">CONSTRUIRE ET PARTAGER</Eyebrow>
       <h2 id="about-follow-title">Suivre le chemin<span className="text-blue">.</span></h2>
       <p>Je me lance aussi dans la création de contenu pour partager mes essais, mes apprentissages et l’avancée de mes produits. Retrouve-moi sur mes profils officiels ou écris-moi pour échanger.</p>
       <div className="about-profile-links">{site.socials.map(profile => <a className="text-link" key={profile.label} href={profile.href} target="_blank" rel="noopener noreferrer">{profile.label}<span aria-hidden="true">↗</span></a>)}</div>
