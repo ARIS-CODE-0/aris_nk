@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const fakes = vi.hoisted(() => ({ requireAdmin: vi.fn(), revalidate: vi.fn(), insert: vi.fn(), update: vi.fn(), remove: vi.fn(), from: vi.fn(), result: { data: { id: '00000000-0000-4000-8000-000000000010', category_id: '00000000-0000-4000-8000-000000000020' }, error: null as null | {code:string} } }));
+const fakes = vi.hoisted(() => ({ requireAdmin: vi.fn(), revalidate: vi.fn(), insert: vi.fn(), update: vi.fn(), remove: vi.fn(), from: vi.fn(), storageUpload: vi.fn(), storageRemove: vi.fn(), result: { data: { id: '00000000-0000-4000-8000-000000000010', category_id: '00000000-0000-4000-8000-000000000020', project_id: '00000000-0000-4000-8000-000000000010', path: 'test/image.png' }, error: null as null | {code:string} } }));
 vi.mock('@/lib/auth', () => ({ requireAdmin: fakes.requireAdmin }));
 vi.mock('@/lib/supabase/server', () => ({ configured: () => true, sessionClient: vi.fn() }));
 vi.mock('next/navigation', () => ({ redirect: (path: string) => { throw new Error(`redirect:${path}`); } }));
 vi.mock('next/cache', () => ({ revalidatePath: fakes.revalidate }));
-import { saveEntry, deleteEntry } from '../app/admin/actions';
+import { saveEntry, deleteEntry, uploadAsset, updateAsset, deleteAsset } from '../app/admin/actions';
 const categoryId = '00000000-0000-4000-8000-000000000020';
 const id = '00000000-0000-4000-8000-000000000010';
 function form(values: Record<string,string>) { const f = new FormData(); for (const [key,value] of Object.entries(values)) f.set(key,value); return f; }
@@ -14,7 +14,9 @@ beforeEach(() => {
   const chain = { insert: fakes.insert, update: fakes.update, delete: fakes.remove, eq: vi.fn(), select: vi.fn(), single: vi.fn(async () => fakes.result) };
   for (const fn of [chain.insert, chain.update, chain.delete, chain.eq, chain.select]) fn.mockReturnValue(chain);
   fakes.from.mockReturnValue(chain);
-  fakes.requireAdmin.mockResolvedValue({ from: fakes.from });
+  fakes.storageUpload.mockResolvedValue({ error: null });
+  fakes.storageRemove.mockResolvedValue({ error: null });
+  fakes.requireAdmin.mockResolvedValue({ from: fakes.from, storage: { from: () => ({ upload: fakes.storageUpload, remove: fakes.storageRemove }) } });
 });
 describe('Gestion des contenus et retour à la catégorie', () => {
   it('ajoute une compétence sans ordre saisi et revient à sa catégorie', async () => {
@@ -43,5 +45,28 @@ describe('Gestion des contenus et retour à la catégorie', () => {
     fakes.requireAdmin.mockRejectedValueOnce(new Error('Accès refusé'));
     await expect(saveEntry('categories', {}, form({ name: 'Interdit' }))).rejects.toThrow('Accès refusé');
     expect(fakes.from).not.toHaveBeenCalled();
+  });
+});
+
+describe('Images des projets', () => {
+  it('passe directement aux images après création du projet', async () => {
+    await expect(saveEntry('projects',{},form({title:'Projet',slug:'projet',summary:'Résumé',description:'Description',project_type:'personal',year:'',technologies:'',demo_url:'',code_url:''}))).rejects.toThrow(`redirect:/admin/projects/${id}/images?created=1`);
+  });
+  it('ajoute une image à un projet existant et reste dans sa page Images', async () => {
+    const data=form({project_id:id,alt:'Couverture du projet'});
+    data.set('file',new File([new Uint8Array([137,80,78,71,13,10,26,10])],'image.png',{type:'image/png'}));
+    await expect(uploadAsset({},data)).rejects.toThrow(`redirect:/admin/projects/${id}/images?uploaded=1`);
+    expect(fakes.storageUpload).toHaveBeenCalledOnce();
+    expect(fakes.insert.mock.calls[0][0]).toMatchObject({project_id:id,alt:'Couverture du projet'});
+    expect(fakes.insert.mock.calls[0][0]).not.toHaveProperty('sort_order');
+  });
+  it('refuse un format non pris en charge avant tout téléversement', async () => {
+    const data=form({project_id:id,alt:'Image'});data.set('file',new File(['<svg/>'],'image.svg',{type:'image/svg+xml'}));
+    expect(await uploadAsset({},data)).toHaveProperty('error');expect(fakes.storageUpload).not.toHaveBeenCalled();
+  });
+  it('revient à la galerie après modification et suppression', async () => {
+    await expect(updateAsset({},form({id,alt:'Nouvelle description',sort_order:'2'}))).rejects.toThrow(`redirect:/admin/projects/${id}/images?saved=1`);
+    await expect(deleteAsset({},form({id,confirm:'on'}))).rejects.toThrow(`redirect:/admin/projects/${id}/images?removed=1`);
+    expect(fakes.storageRemove).toHaveBeenCalledWith(['test/image.png']);
   });
 });

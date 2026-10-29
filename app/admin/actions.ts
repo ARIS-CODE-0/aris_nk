@@ -46,6 +46,7 @@ export async function saveEntry(kind: Kind, _previous: FormState, form: FormData
   revalidatePath('/', 'layout');
   if (kind === 'categories') redirect(`${categoryPath(result.data.id)}?saved=1`);
   if (kind === 'skills') redirect(`${categoryPath(String(payload.category_id))}?saved=1`);
+  if (kind === 'projects' && !id) redirect(`/admin/projects/${result.data.id}/images?created=1`);
   redirect(`/admin/${kind}/${result.data.id}?saved=1`);
 }
 export async function deleteEntry(kind: Kind, _previous: FormState, form: FormData): Promise<FormState> {
@@ -88,7 +89,7 @@ export async function uploadAsset(_previous: FormState, form: FormData): Promise
   const { error: insertError } = await db.from('project_assets').insert({ project_id: project.data, path, alt });
   if (insertError) { await db.storage.from('project-media').remove([path]); return { error: 'L’image n’a pas pu être associée au projet.' }; }
   revalidatePath('/', 'layout');
-  redirect(`/admin/projects/${project.data}?uploaded=1`);
+  redirect(`/admin/projects/${project.data}/images?uploaded=1`);
 }
 export async function updateAsset(_previous: FormState, form: FormData): Promise<FormState> {
   const db = await requireAdmin();
@@ -99,7 +100,7 @@ export async function updateAsset(_previous: FormState, form: FormData): Promise
   const { data, error } = await db.from('project_assets').update({ alt, sort_order: sort.data }).eq('id', id.data).select('project_id').single();
   if (error) return { error: dbError(error.code) };
   revalidatePath('/', 'layout');
-  redirect(`/admin/projects/${data.project_id}?saved=1`);
+  redirect(`/admin/projects/${data.project_id}/images?saved=1`);
 }
 export async function deleteAsset(_previous: FormState, form: FormData): Promise<FormState> {
   const db = await requireAdmin();
@@ -112,5 +113,5 @@ export async function deleteAsset(_previous: FormState, form: FormData): Promise
   const { error } = await db.from('project_assets').delete().eq('id', id.data);
   if (error) return { error: dbError() };
   revalidatePath('/', 'layout');
-  redirect(`/admin/projects/${asset.project_id}?removed=1`);
+  redirect(`/admin/projects/${asset.project_id}/images?removed=1`);
 }
