@@ -1,0 +1,6 @@
+import type { Metadata } from 'next';
+import { publicContent, projectAssets } from '@/lib/data';
+import { Eyebrow, EmptyState } from '@/components/ui';
+import { ProjectCard } from '@/components/project';
+export const metadata: Metadata = { title: 'Projets', description: 'Mes projets personnels et professionnels, du premier prototype au produit web.', alternates: { canonical: '/projets' } };
+export default async function ProjectsPage() { const { projects } = await publicContent(); const covers = await Promise.all(projects.map(async p => (await projectAssets(p.id))[0])); return <div className="container page-content"><Eyebrow index="01">MES RÉALISATIONS</Eyebrow><h1>Des idées qui<br />prennent forme<span className="text-blue">.</span></h1><p className="page-lead">Des projets personnels et professionnels.<br />Chaque projet, une nouvelle occasion d’apprendre et de construire.</p>{projects.length ? <div className="projects-grid">{projects.map((p,i) => <ProjectCard key={p.id} project={p} cover={covers[i]} />)}</div> : <EmptyState title="Les projets arrivent ici.">Je prépare la présentation de mes réalisations. En attendant, parlons de ce que nous pourrions construire ensemble.</EmptyState>}</div>; }

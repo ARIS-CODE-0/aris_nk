@@ -1,0 +1,21 @@
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { test, expect } from '@playwright/test';
+import { SkillAccordions } from '../../components/skill-accordions';
+const base = { published: true, sort_order: 0, created_at: '', updated_at: '' };
+test('accordéons de compétences : catégories, puces et ouverture indépendante au clavier', async ({ page }) => {
+  const html = renderToStaticMarkup(<SkillAccordions categories={[{ ...base, id: 'dev', name: 'Développement' }, { ...base, id: 'marketing', name: 'Marketing' }, { ...base, id: 'empty', name: 'Catégorie vide' }]} skills={[{ ...base, id: 'html', name: 'HTML', category_id: 'dev' }, { ...base, id: 'css', name: 'CSS', category_id: 'dev' }, { ...base, id: 'seo', name: 'SEO', category_id: 'marketing' }]} />);
+  await page.setContent(html);
+  await expect(page.locator('details')).toHaveCount(2);
+  await expect(page.locator('details[open]')).toHaveCount(0);
+  const development = page.locator('summary').filter({ hasText: 'Développement' });
+  await development.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('listitem').filter({ hasText: 'HTML' })).toBeVisible();
+  await expect(page.locator('details[open] ul li')).toHaveCount(2);
+  await page.locator('summary').filter({ hasText: 'Marketing' }).click();
+  await expect(page.locator('details[open]')).toHaveCount(2);
+  await expect(page.getByRole('listitem').filter({ hasText: 'SEO' })).toBeVisible();
+  await development.click();
+  await expect(page.locator('details[open]')).toHaveCount(1);
+});
