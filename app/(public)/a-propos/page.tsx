@@ -3,8 +3,8 @@ import Image from 'next/image';
 import { Action, Eyebrow } from '@/components/ui';
 import { site, siteUrl } from '@/lib/site';
 
-const title = 'Aristote Nkomba : développeur web & SaaS builder à Lubumbashi';
-const description = 'Découvre Aristote Nkomba, alias Aris NK : développeur web autodidacte depuis 2023 et SaaS builder à Lubumbashi, en RDC. Son parcours et ses projets.';
+const title = 'Aristote Nkomba : mon parcours';
+const description = 'Aristote Nkomba, alias Aris NK : mon parcours de développeur web autodidacte et de SaaS builder à Lubumbashi, en RDC.';
 
 export const metadata: Metadata = {
   title,
