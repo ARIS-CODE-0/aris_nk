@@ -7,7 +7,7 @@ export function Logo() { return <span className="wordmark">aris<span className="
 export function Navigation() {
   const path = usePathname();
   const [open, setOpen] = useState(false);
-  const links = [{ href: '/', label: 'Accueil' }, { href: '/a-propos', label: 'À propos' }, { href: '/projets', label: 'Projets' }, { href: '/services', label: 'Services' }, { href: '/contact', label: 'Contact' }];
+  const links = [{ href: '/', label: 'Accueil' }, { href: '/a-propos', label: 'À propos' }, { href: '/services', label: 'Services' }, { href: '/contact', label: 'Contact' }];
   return <header className="nav-wrap"><div className="nav-island">
     <Link href="/" aria-label="Aris NK — accueil" onClick={() => setOpen(false)}><Logo /></Link>
     <nav aria-label="Navigation principale" className="desktop-nav">{links.map(link => <Link key={link.href} href={link.href} aria-current={(link.href === '/' ? path === '/' : path.startsWith(link.href)) ? 'page' : undefined}>{link.label}</Link>)}</nav>
