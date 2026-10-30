@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: '/a-propos' },
-  openGraph: { title: `${title} — Aris NK`, description, url: '/a-propos', images: ['/opengraph-image'] },
+  openGraph: { title: `${title} — Aris NK`, description, url: '/a-propos', images: ['/opengraph-image?v=2'] },
 };
 
 export default function AboutPage() {

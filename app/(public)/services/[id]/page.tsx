@@ -14,7 +14,7 @@ const getService = cache(async (id: string): Promise<Service> => {
 });
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const service = await getService((await params).id);
-  return { title: service.title, description: service.summary, alternates: { canonical: `/services/${service.id}` }, openGraph: { title: service.title, description: service.summary, images: ['/opengraph-image'] } };
+  return { title: service.title, description: service.summary, alternates: { canonical: `/services/${service.id}` }, openGraph: { title: service.title, description: service.summary, images: ['/opengraph-image?v=2'] } };
 }
 export default async function ServicePage({ params }: { params: Promise<{ id: string }> }) {
   const service = await getService((await params).id);
